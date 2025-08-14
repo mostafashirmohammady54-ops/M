@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic-Tac-Toe Game</title>
+<style>
+:root {
+--board-background: #2c3e50; /* Dark blue-grey */
+--cell-background: #34495e; /* Slightly lighter dark blue-grey */
+--text-color: #ecf0f1; /* Light grey */
+--x-color: #e74c3c; /* Red */
+--o-color: #3498db; /* Blue */
+--win-color: #27ae60; /* Green */
+--button-background: #f1c40f; /* Yellow */
+--button-text: #2c3e50;
+}
+
+body {
+font-family: 'Arial', sans-serif;
+display: flex;
+justify-content: center;
+align-items: center;
+min-height: 100vh;
+background-color: #1a202c; /* Even darker background */
+margin: 0;
+overflow: auto; /* Make sure it's scrollable if content overflows */
+}
+
+.game-container {
+background-color: var(--board-background);
+padding: 30px;
+border-radius: 15px;
+box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+text-align: center;
+width: 100%;
+max-width: 400px; /* Limit max width for better appearance */
+box-sizing: border-box; /* Include padding in width */
+}
+
+h1 {
+color: var(--text-color);
+margin-bottom: 20px;
+font-size: 2.5em;
+}
+
+.game-status {
+color: var(--text-color);
+font-size: 1.5em;
+margin-bottom: 20px;
+min-height: 1.5em; /* Prevent layout shift when text changes */
+}
+
+.game-board {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+grid-template-rows: repeat(3, 1fr);
+gap: 10px;
+margin: 0 auto 30px auto;
+width: 300px; /* Fixed size for the board */
+height: 300px; /* Fixed size for the board */
+}
+
+.cell {
+width: 100%;
+height: 100%;
+background-color: var(--cell-background);
+display: flex;
+justify-content: center;
+align-items: center;
+font-size: 3.5em;
+font-weight: bold;
+color: var(--text-color);
+cursor: pointer;
+border-radius: 8px;
+transition: background-color 0.3s ease, transform 0.1s ease;
+user-select: none; /* Prevent text selection */
+}
+
+.cell:hover {
+background-color: #4a627d; /* Slightly lighter on hover */
+transform: scale(1.02);
+}
+
+.cell.x-player {
+color: var(--x-color);
+}
+
+.cell.o-player {
+color: var(--o-color);
+}
+
+.cell.winning-cell {
+background-color: var(--win-color);
+color: white;
+}
+
+.restart-button {
+background-color: var(--button-background);
+color: var(--button-text);
+border: none;
+padding: 15px 30px;
+font-size: 1.2em;
+border-radius: 8px;
+cursor: pointer;
+transition: background-color 0.3s ease, transform 0.1s ease;
+}
+
+.restart-button:hover {
+background-color: #d8af0e; /* Slightly darker yellow */
+transform: translateY(-2px);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 450px) {
+.game-container {
+padding: 20px;
+margin: 15px; /* Add some margin for very small screens */
+}
+
+h1 {
+font-size: 2em;
+}
+
+.game-status {
+font-size: 1.2em;
+}
+
+.game-board {
+width: 270px; /* Adjust board size */
+height: 270px;
+gap: 8px;
+}
+
+.cell {
+font-size: 3em;
+}
+
+.restart-button {
+padding: 12px 25px;
+font-size: 1em;
+}
+}
+</style>
+</head>
+<body>
+<div class="game-container">
+<h1>Tic-Tac-Toe</h1>
+<div class="game-status"></div>
+<div class="game-board">
+<div class="cell" data-cell-index="0"></div>
+<div class="cell" data-cell-index="1"></div>
+<div class="cell" data-cell-index="2"></div>
+<div class="cell" data-cell-index="3"></div>
+<div class="cell" data-cell-index="4"></div>
+<div class="cell" data-cell-index="5"></div>
+<div class="cell" data-cell-index="6"></div>
+<div class="cell" data-cell-index="7"></div>
+<div class="cell" data-cell-index="8"></div>
+</div>
+<button class="restart-button">Restart Game</button>
+</div>
+
+<script>
+const statusDisplay = document.querySelector('.game-status');
+const restartButton = document.querySelector('.restart-button');
+const cells = document.querySelectorAll('.cell');
+
+let gameActive = true;
+let currentPlayer = 'X';
+let gameState = ['', '', '', '', '', '', '', '', '']; // Represents the board state
+
+const winningConditions = [
+[0, 1, 2],
+[3, 4, 5],
+[6, 7, 8],
+[0, 3, 6],
+[1, 4, 7],
+[2, 5, 8],
+[0, 4, 8],
+[2, 4, 6]
+];
+
+const messages = {
+playerTurn: (player) => `It's ${player}'s turn`,
+playerWin: (player) => `Player ${player} has won!`,
+draw: 'Game ended in a draw!'
+};
+
+function handleStatusDisplay(message) {
+statusDisplay.innerHTML = message;
+}
+
+function handleCellPlayed(clickedCell, clickedCellIndex) {
+gameState[clickedCellIndex] = currentPlayer;
+clickedCell.innerHTML = currentPlayer;
+clickedCell.classList.add(currentPlayer === 'X' ? 'x-player' : 'o-player');
+}
+
+function handleResultValidation() {
+let roundWon = false;
+for (let i = 0; i < winningConditions.length; i++) {
+const winCondition = winningConditions[i];
+let a = gameState[winCondition[0]];
+let b = gameState[winCondition[1]];
+let c = gameState[winCondition[2]];
+
+if (a === '' || b === '' || c === '') {
+continue;
+}
+if (a === b && b === c) {
+roundWon = true;
+// Highlight winning cells
+winCondition.forEach(index => {
+cells[index].classList.add('winning-cell');
+});
+break;
+}
+}
+
+if (roundWon) {
+handleStatusDisplay(messages.playerWin(currentPlayer));
+gameActive = false;
+return;
+}
+
+let roundDraw = !gameState.includes('');
+if (roundDraw) {
+handleStatusDisplay(messages.draw);
+gameActive = false;
+return;
+}
+
+handlePlayerChange();
+}
+
+function handlePlayerChange() {
+currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+handleStatusDisplay(messages.playerTurn(currentPlayer));
+}
+
+function handleCellClick(event) {
+const clickedCell = event.target;
+const clickedCellIndex = parseInt(clickedCell.getAttribute('data-cell-index'));
+
+if (gameState[clickedCellIndex] !== '' || !gameActive) {
+return;
+}
+
+handleCellPlayed(clickedCell, clickedCellIndex);
+handleResultValidation();
+}
+
+function handleRestartGame() {
+gameActive = true;
+currentPlayer = 'X';
+gameState = ['', '', '', '', '', '', '', '', ''];
+handleStatusDisplay(messages.playerTurn(currentPlayer));
+cells.forEach(cell => {
+cell.innerHTML = '';
+cell.classList.remove('x-player', 'o-player', 'winning-cell');
+});
+}
+
+// Initial status display
+handleStatusDisplay(messages.playerTurn(currentPlayer));
+
+cells.forEach(cell => cell.addEventListener('click', handleCellClick));
+restartButton.addEventListener('click', handleRestartGame);
+</script>
+</body>
+</html>
